@@ -34,84 +34,95 @@ O sistema é centralizado em um menu interativo de linha de comando (`CLI`) onde
 
 ### Tópico 01 — Sistemas Lineares (Métodos Diretos): Problema 01.3 (Mineração)
 - **Método:** Eliminação de Gauss com Pivoteamento Parcial e Substituição Regressiva.
-- **Descrição:** Um engenheiro precisa extrair $4.800\text{ m}^3$ de areia, $5.800\text{ m}^3$ de cascalho fino e $5.700\text{ m}^3$ de cascalho grosso a partir de três minas com as seguintes composições percentuais:
+- **Descrição:** Um engenheiro precisa extrair **4.800 m³** de areia, **5.800 m³** de cascalho fino e **5.700 m³** de cascalho grosso a partir de três minas com as seguintes composições percentuais:
 
-| Material | Mina 1 ($x_1$) | Mina 2 ($x_2$) | Mina 3 ($x_3$) | Demanda Total ($\text{m}^3$) |
+| Material | Mina 1 (`x1`) | Mina 2 (`x2`) | Mina 3 (`x3`) | Demanda Total (m³) |
 | :--- | :---: | :---: | :---: | :---: |
-| **Areia** | $55\%$ | $25\%$ | $25\%$ | $4.800$ |
-| **Cascalho Fino** | $30\%$ | $45\%$ | $20\%$ | $5.800$ |
-| **Cascalho Grosso** | $15\%$ | $30\%$ | $55\%$ | $5.700$ |
+| **Areia** | 55% | 25% | 25% | 4.800 |
+| **Cascalho Fino** | 30% | 45% | 20% | 5.800 |
+| **Cascalho Grosso** | 15% | 30% | 55% | 5.700 |
 
-- **Modelo Linear ($Ax = b$):**
-  $$
-  \begin{bmatrix}
-  0{,}55 & 0{,}25 & 0{,}25 \\
-  0{,}30 & 0{,}45 & 0{,}20 \\
-  0{,}15 & 0{,}30 & 0{,}55
-  \end{bmatrix}
-  \begin{bmatrix}
-  x_1 \\ x_2 \\ x_3
-  \end{bmatrix}
-  =
-  \begin{bmatrix}
-  4800 \\ 5800 \\ 5700
-  \end{bmatrix}
-  $$
-- **Saída esperada:** Volume ($x_1, x_2, x_3$) em $\text{m}^3$ a ser minerado de cada mina e matriz escalonada resultante.
+- **Modelo Linear (`A * x = b`):**
+
+```text
+| 0.55   0.25   0.25 |   | x1 |   | 4800 |
+| 0.30   0.45   0.20 | * | x2 | = | 5800 |
+| 0.15   0.30   0.55 |   | x3 |   | 5700 |
+```
+
+Equações do sistema:
+- `0,55 * x1 + 0,25 * x2 + 0,25 * x3 = 4800` (Areia)
+- `0,30 * x1 + 0,45 * x2 + 0,20 * x3 = 5800` (Cascalho Fino)
+- `0,15 * x1 + 0,30 * x2 + 0,55 * x3 = 5700` (Cascalho Grosso)
+
+- **Saída esperada:** Volume (`x1, x2, x3`) em m³ a ser minerado de cada mina e matriz escalonada resultante.
 
 ---
 
 ### Tópico 02 — Sistemas Lineares (Métodos Iterativos): Problema 02.2 (Treliça)
 - **Método:** Método Iterativo de Gauss-Seidel com verificação de convergência (Critério das Linhas / Critério de Sassenfeld).
-- **Tolerância (Precisão):** $\epsilon = 0{,}0001$ ($10^{-4}$), utilizando erro relativo máximo:
-  $$
-  \frac{\max_i |x_i^{(k)} - x_i^{(k-1)}|}{\max_i |x_i^{(k)}|} < \epsilon
-  $$
-- **Descrição:** Cálculo das forças internas nas barras e reações de apoio de uma treliça estaticamente determinada com juntas articuladas a partir das equações de equilíbrio estático ($\sum F_x = 0$ e $\sum F_y = 0$), considerando ângulos de $45^\circ$, $45^\circ$, $60^\circ$ e $30^\circ$ e cargas externas verticais de $500$ e $100$.
-- **Saída esperada:** Análise de convergência, vetor solução das forças/tensões nas barras e número total de iterações até atingir $\epsilon = 0{,}0001$.
+- **Tolerância (Precisão):** `ε = 0,0001` (`10^-4`), utilizando o erro relativo máximo como critério de parada:
+
+```text
+Erro Relativo = max |x_i^(k) - x_i^(k-1)| / max |x_i^(k)| < 0.0001
+```
+
+- **Descrição:** Cálculo das forças internas nas barras e reações de apoio de uma treliça estaticamente determinada com juntas articuladas a partir das equações de equilíbrio estático (`ΣFx = 0` e `ΣFy = 0`), considerando ângulos de **45°**, **45°**, **60°** e **30°** e cargas externas verticais de **500** e **100**.
+- **Saída esperada:** Análise de convergência, vetor solução das forças/tensões nas barras e número total de iterações até atingir a precisão `0,0001`.
 
 ---
 
 ### Tópico 03 — Interpolação e Ajuste de Curvas: Problema 03.1 (Lei de Moore)
 - **Método:** Regressão Linear pelo Método dos Mínimos Quadrados (MMQ) com linearização logarítmica na base 10.
 - **Modelo Matemático:**
-  Como o crescimento do número de transistores $N$ em função do ano $a$ é exponencial, aplica-se a transformação $y = \log_{10}(N)$ para ajustar a reta:
-  $$
-  y = b_0 + b_1 \cdot a \implies \log_{10}(N) = b_0 + b_1 \cdot a \implies N(a) = 10^{(b_0 + b_1 \cdot a)}
-  $$
+  Como o crescimento do número de transistores `N` em função do ano `a` é exponencial, aplica-se a transformação `y = log10(N)` para ajustar a reta:
+
+```text
+y = b0 + b1 * a   ===>   log10(N) = b0 + b1 * a   ===>   N(a) = 10^(b0 + b1 * a)
+```
+
 - **Dados Padrão (Histórico de Processadores Intel):**
 
-| Chip | 4004 | 8008 | 8080 | 8086 | 80286 | 80386 | 80486 | Pentium | Pentium II | Pentium III | Pentium 4 |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Ano ($a$)** | 1971 | 1972 | 1974 | 1978 | 1982 | 1986 | 1989 | 1993 | 1997 | 1999 | 2000 |
-| **Transistores ($N$)** | $2.250$ | $3.300$ | $6.000$ | $29.000$ | $134.000$ | $275.000$ | $1{,}2\times 10^6$ | $3{,}1\times 10^6$ | $7{,}5\times 10^6$ | $9{,}5\times 10^6$ | $42\times 10^6$ |
+| Chip | Ano (`a`) | Número de Transistores (`N`) |
+| :--- | :---: | :---: |
+| **4004** | 1971 | 2.250 |
+| **8008** | 1972 | 3.300 |
+| **8080** | 1974 | 6.000 |
+| **8086** | 1978 | 29.000 |
+| **80286** | 1982 | 134.000 |
+| **80386** | 1986 | 275.000 |
+| **80486** | 1989 | 1.200.000 |
+| **Pentium** | 1993 | 3.100.000 |
+| **Pentium II** | 1997 | 7.500.000 |
+| **Pentium III** | 1999 | 9.500.000 |
+| **Pentium 4** | 2000 | 42.000.000 |
 
 - **Saída esperada:**
-  - Coeficientes da equação linearizada ($b_0, b_1$) e coeficiente de determinação ($R^2$) / erro quadrático residual;
-  - Previsão do número de transistores para os anos de **2010** e **2020** (revertendo a transformação via $N = 10^y$).
+  - Coeficientes da equação linearizada (`b0, b1`), coeficiente de determinação (`R²`) e erro quadrático residual;
+  - Previsão do número de transistores para os anos de **2010** e **2020** (revertendo a transformação via `N = 10^y`).
 
 ---
 
 ### Tópico 04 — Integração Numérica: Problema 04.2 (Área da Superfície de um Rio)
-- **Métodos:** Regra dos Trapézios Repetida e Regra $1/3$ de Simpson Repetida.
-- **Descrição:** Determinar a área superficial de um trecho de rio entre $x = 0\text{ m}$ e $x = 40\text{ m}$ com passo $h = 10\text{ m}$ ($n = 4$ subintervalos), conhecendo-se as distâncias de duas margens $M_1(x)$ e $M_2(x)$ em relação a uma linha de referência:
+- **Métodos:** Regra dos Trapézios Repetida e Regra 1/3 de Simpson Repetida.
+- **Descrição:** Determinar a área superficial de um trecho de rio entre `x = 0 m` e `x = 40 m` com passo `h = 10 m` (`n = 4` subintervalos), conhecendo-se as distâncias de duas margens `M1(x)` e `M2(x)` em relação a uma linha de referência:
 
-| Posição $x_i$ ($\text{m}$) | $0$ | $10$ | $20$ | $30$ | $40$ |
+| Posição `x_i` (m) | 0 | 10 | 20 | 30 | 40 |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Margem 1 — $M_1(x_i)$ ($\text{m}$)** | $50{,}8$ | $86{,}2$ | $136{,}0$ | $72{,}8$ | $51{,}0$ |
-| **Margem 2 — $M_2(x_i)$ ($\text{m}$)** | $113{,}6$ | $144{,}5$ | $185{,}0$ | $171{,}2$ | $95{,}3$ |
-| **Largura — $f(x_i) = M_2(x_i) - M_1(x_i)$ ($\text{m}$)** | $62{,}8$ | $58{,}3$ | $49{,}0$ | $98{,}4$ | $44{,}3$ |
+| **Margem 1 — `M1(x_i)` (m)** | 50,8 | 86,2 | 136,0 | 72,8 | 51,0 |
+| **Margem 2 — `M2(x_i)` (m)** | 113,6 | 144,5 | 185,0 | 171,2 | 95,3 |
+| **Largura — `f(x_i) = M2(x_i) - M1(x_i)` (m)** | 62,8 | 58,3 | 49,0 | 98,4 | 44,3 |
 
 - **Fórmulas Compostas:**
-  - **Trapézios Repetida:**
-    $$
-    I_T \approx \frac{h}{2} \left[ f(x_0) + 2\sum_{i=1}^{n-1} f(x_i) + f(x_n) \right]
-    $$
-  - **1/3 de Simpson Repetida** ($n$ par):
-    $$
-    I_S \approx \frac{h}{3} \left[ f(x_0) + 4\sum_{i\text{ ímpar}}^{n-1} f(x_i) + 2\sum_{i\text{ par}}^{n-2} f(x_i) + f(x_n) \right]
-    $$
-- **Saída esperada:** Tabela de larguras $f(x_i)$, área estimada por cada método (em $\text{m}^2$) e análise comparativa entre os resultados.
+  - **Regra dos Trapézios Repetida:**
+    ```text
+    I_T ≈ (h / 2) * [ f(x0) + 2 * (f(x1) + f(x2) + ... + f(x_{n-1})) + f(xn) ]
+    ```
+  - **Regra 1/3 de Simpson Repetida** (`n` par):
+    ```text
+    I_S ≈ (h / 3) * [ f(x0) + 4 * Σ f(x_ímpar) + 2 * Σ f(x_par) + f(xn) ]
+    ```
+- **Saída esperada:** Tabela de larguras `f(x_i)`, área estimada por cada método (em m²) e análise comparativa entre os resultados.
 
 ---
 
@@ -143,7 +154,7 @@ calculo-numerico-atv2/
    cd calculo-numerico-atv2
    ```
 
-2. Compile todos os arquivos-fonte gerando os `.class` em um diretório `bin/` (ou diretamente a partir de `src/`):
+2. Compile todos os arquivos-fonte gerando os `.class` em um diretório `bin/`:
    ```bash
    javac -encoding UTF-8 -d bin src/*.java
    ```
