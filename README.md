@@ -162,5 +162,5 @@ calculo-numerico-atv2/
 | Integrante | Papel / Responsabilidade |
 | :--- | :--- |
 | **Vitor Santos** | Arquitetura base, integração e implementação de módulos numéricos |
-| **[Integrante 2 — A definir]** | Implementação e validação de módulos numéricos |
-| **[Integrante 3 — A definir]** | Implementação, testes de casos de borda e documentação |
+| **Laedson Araújo** | Implementação e validação de módulos numéricos |
+| **Myguel Luiz** | Implementação, testes de casos de borda e documentação |
