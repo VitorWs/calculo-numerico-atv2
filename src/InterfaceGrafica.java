@@ -10,7 +10,9 @@ import java.util.Locale;
  * Interface gráfica em Swing para integrar os 4 módulos de Cálculo Numérico.
  * Puxa diretamente os métodos já implementados nas outras classes do pacote.
  */
-public class InterfaceGrafica extends JFrame {
+public final class InterfaceGrafica extends JFrame {
+
+    private static final long serialVersionUID = 1L;
 
     // Cores e fonte padrão da interface
     private static final Color COR_PRIMARIA = new Color(25, 65, 115);

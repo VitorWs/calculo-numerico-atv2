@@ -16,7 +16,7 @@ public class Main {
 
         do {
             exibirMenuPrincipal();
-            opcao = lerInteiro(scanner, "Escolha uma opcao [0-4]: ", 0, 4);
+            opcao = lerInteiro(scanner, "Escolha uma opcao [0-5]: ", 0, 5);
 
             switch (opcao) {
                 case 1:
@@ -30,6 +30,10 @@ public class Main {
                     break;
                 case 4:
                     IntegracaoNumerica.executarMenu(scanner);
+                    break;
+                case 5:
+                    System.out.println("\n>>> Abrindo Interface Grafica (Swing)...");
+                    InterfaceGrafica.main(new String[0]);
                     break;
                 case 0:
                     System.out.println("\n================================================================");
@@ -65,6 +69,7 @@ public class Main {
         System.out.println("|                 [Minimos Quadrados - Prob. 03.1 Lei de Moore]|");
         System.out.println("|  4. Topico 04 - Integracao Numerica                          |");
         System.out.println("|                 [Trapezios e Simpson 1/3 - Prob. 04.2 Rio]   |");
+        System.out.println("|  5. Abrir Interface Grafica (Janela Swing)                   |");
         System.out.println("|  0. Sair do Programa                                         |");
         System.out.println("+--------------------------------------------------------------+");
     }
