@@ -3,27 +3,18 @@ import java.util.Scanner;
 /**
  * Tópico 03 - Interpolação e Ajuste de Curvas
  * Problema 03.1 (Lei de Moore) — Regressão Linear pelo Método dos Mínimos Quadrados (MMQ).
- *
- * Dados Padrão:
- * - Anos (a): 1971, 1972, 1974, 1978, 1982, 1986, 1989, 1993, 1997, 1999, 2000
- * - Transistores (N): 2250, 3300, 6000, 29000, 134000, 275000, 1200000, 3100000, 7500000, 9500000, 42000000
- * - Transformação linearizante: y = log10(N) = b0 + b1 * a  =>  N(a) = 10^(b0 + b1 * a)
- * - Previsões exigidas: Anos de 2010 e 2020.
  */
 public class MinimosQuadrados {
 
-    // Nomes dos processadores da tabela original do Problema 03.1
     private static final String[] CHIPS_PADRAO = {
         "4004", "8008", "8080", "8086", "80286", "80386",
         "80486", "Pentium", "Pentium II", "Pentium III", "Pentium 4"
     };
 
-    // Vetor padrão de anos (variável independente a)
     private static final double[] ANOS_PADRAO = {
         1971, 1972, 1974, 1978, 1982, 1986, 1989, 1993, 1997, 1999, 2000
     };
 
-    // Vetor padrão do número de transistores (variável dependente N)
     private static final double[] TRANSISTORES_PADRAO = {
         2_250.0,
         3_300.0,
@@ -38,9 +29,6 @@ public class MinimosQuadrados {
         42_000_000.0
     };
 
-    /**
-     * Gerencia o submenu interativo do Módulo 03.
-     */
     public static void executarMenu(Scanner scanner) {
         int opcao;
         do {
@@ -68,35 +56,86 @@ public class MinimosQuadrados {
         } while (opcao != 0);
     }
 
-    /**
-     * Executa o Problema 03.1 (Lei de Moore) com os 11 pontos históricos padrão.
-     */
     private static void executarCasoPadrao() {
         System.out.println("\n>>> Executando Problema 03.1 (Lei de Moore) com dados padrao...");
-        // TODO: Aplicar y_i = Math.log10(N_i), ajustar reta por MMQ, calcular erro quadrático
-        //       e estimar N(2010) e N(2020) via Math.pow(10, b0 + b1 * ano).
-        System.out.println("[TODO] Implementar Regressao Linear MMQ com transformacao log10(N).");
+        int m = ANOS_PADRAO.length;
+        double[] y = new double[m];
+        for (int i = 0; i < m; i++) {
+            y[i] = Math.log10(TRANSISTORES_PADRAO[i]);
+        }
+
+        double[] coef = ajustarRetaMMQ(ANOS_PADRAO, y);
+        double c = coef[0];
+        double a = coef[1];
+
+        System.out.println("\nTabela de Dados Transformados (y = log10(N)):");
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("  Chip         |   Ano   |  Transistores (N)  |   log10(N)");
+        System.out.println("----------------------------------------------------------------");
+        double erroQuadLog = 0.0;
+        for (int i = 0; i < m; i++) {
+            double yEst = a * ANOS_PADRAO[i] + c;
+            erroQuadLog += Math.pow(y[i] - yEst, 2);
+            System.out.printf("  %-12s |  %4.0f   |  %16.0f  |   %8.5f%n",
+                    CHIPS_PADRAO[i], ANOS_PADRAO[i], TRANSISTORES_PADRAO[i], y[i]);
+        }
+        System.out.println("----------------------------------------------------------------");
+        System.out.printf("  Equacao ajustada : log10(N) = %.5f * ano + (%.5f)%n", a, c);
+        System.out.printf("  Tempo de dobra   : Dobra a cada %.2f anos%n", Math.log10(2.0) / a);
+        System.out.printf("  Erro quadratico  : %.6f%n", erroQuadLog);
+        System.out.println("----------------------------------------------------------------");
+
+        for (int anoPrev : new int[]{2010, 2020}) {
+            double logN = a * anoPrev + c;
+            System.out.printf("  Previsao %d    : %.3e transistores (log10(N) = %.5f)%n",
+                    anoPrev, Math.pow(10.0, logN), logN);
+        }
+        System.out.println("----------------------------------------------------------------");
     }
 
-    /**
-     * Permite ao usuário inserir novos pares de pontos (x_i, y_i) para ajuste por MMQ.
-     */
     private static void executarEntradaManual(Scanner scanner) {
-        System.out.println("\n>>> Entrada Manual - Minimos Quadrados (Regressao Linear)");
+        System.out.println("\n>>> Entrada Manual - Minimos Quadrados (Transformacao log10)");
         int m = Main.lerInteiro(scanner, "Informe a quantidade de pontos tabelados (m >= 2): ", 2, 100);
-        // TODO: Ler vetores x e y (com opção de transformação log10 ou ajuste linear direto) e prever valores.
-        System.out.println("[TODO] Implementar leitura de " + m + " pontos e calculo dos coeficientes MMQ.");
+        double[] x = new double[m];
+        double[] nVal = new double[m];
+        double[] y = new double[m];
+
+        for (int i = 0; i < m; i++) {
+            x[i] = Main.lerDouble(scanner, String.format("  Ano/X[%d]: ", i + 1));
+            while (true) {
+                nVal[i] = Main.lerDouble(scanner, String.format("  Valor N[%d] (> 0): ", i + 1));
+                if (nVal[i] > 0) {
+                    break;
+                }
+                System.out.println("[!] O valor N deve ser positivo para aplicar log10(N).");
+            }
+            y[i] = Math.log10(nVal[i]);
+        }
+
+        double[] coef = ajustarRetaMMQ(x, y);
+        double c = coef[0];
+        double a = coef[1];
+
+        System.out.printf("%nEquacao ajustada: log10(N) = %.5f * x + (%.5f)%n", a, c);
+        double xPrev = Main.lerDouble(scanner, "Informe um valor de X/Ano para previsao: ");
+        double logN = a * xPrev + c;
+        System.out.printf("Previsao para %.1f: %.3e%n", xPrev, Math.pow(10.0, logN));
     }
 
     /**
-     * Calcula os coeficientes [b0, b1] da reta ajustada y = b0 + b1 * x pelo Método dos Mínimos Quadrados.
-     *
-     * @param x Vetor da variável independente
-     * @param y Vetor da variável dependente (já linearizada, se aplicável)
-     * @return Array de tamanho 2 contendo {b0, b1}
+     * Calcula os coeficientes [c, a] da reta ajustada y = c + a * x pelo Método dos Mínimos Quadrados.
      */
     public static double[] ajustarRetaMMQ(double[] x, double[] y) {
-        // TODO: Implementar somatórios de x_i, y_i, x_i^2 e x_i*y_i para obter b0 e b1.
-        return new double[]{0.0, 0.0};
+        int m = x.length;
+        double sx = 0, sy = 0, sxx = 0, sxy = 0;
+        for (int i = 0; i < m; i++) {
+            sx  += x[i];
+            sy  += y[i];
+            sxx += x[i] * x[i];
+            sxy += x[i] * y[i];
+        }
+        double a = (m * sxy - sx * sy) / (m * sxx - sx * sx);
+        double c = (sy - a * sx) / m;
+        return new double[]{c, a};
     }
 }

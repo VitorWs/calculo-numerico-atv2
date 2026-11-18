@@ -1,4 +1,4 @@
-public class AreaRio{
+class AreaRio{
 
      static double trapezioRepetido(double[] f, double h){
         int n = f.length - 1;

@@ -1,4 +1,4 @@
-public class LeiDeMoore {
+class LeiDeMoore {
 
     public static void main(String[] args) {
         double[] ano = {1971, 1972, 1974, 1978, 1982, 1986, 1989, 1993, 1997, 1999, 2000};

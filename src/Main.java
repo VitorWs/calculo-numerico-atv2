@@ -89,7 +89,7 @@ public class Main {
     public static int lerInteiro(Scanner scanner, String mensagem, int min, int max) {
         while (true) {
             System.out.print(mensagem);
-            String entrada = scanner.nextLine().trim();
+            String entrada = scanner.nextLine().replace("\uFEFF", "").trim();
             try {
                 int valor = Integer.parseInt(entrada);
                 if (valor >= min && valor <= max) {
@@ -108,7 +108,7 @@ public class Main {
     public static double lerDouble(Scanner scanner, String mensagem) {
         while (true) {
             System.out.print(mensagem);
-            String entrada = scanner.nextLine().trim().replace(',', '.');
+            String entrada = scanner.nextLine().replace("\uFEFF", "").trim().replace(',', '.');
             try {
                 return Double.parseDouble(entrada);
             } catch (NumberFormatException e) {
