@@ -266,7 +266,7 @@ public final class InterfaceGrafica extends JFrame {
 
         JPanel linha1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
         linha1.add(new JLabel("Ordem (n):"));
-        spOrdemIterativo = new JSpinner(new SpinnerNumberModel(6, 2, 15, 1));
+        spOrdemIterativo = new JSpinner(new SpinnerNumberModel(10, 2, 20, 1));
         linha1.add(spOrdemIterativo);
 
         JButton btnRedim = new JButton("Aplicar Ordem (n)");
@@ -326,39 +326,31 @@ public final class InterfaceGrafica extends JFrame {
         return panel;
     }
 
-    // Preenche a tabela com o sistema 6x6 do Problema 02.2 (Treliça)
+    // Preenche a tabela com o sistema 10x10 do Problema 02.2 (Treliça: 7 barras + 3 reações)
     private void carregarPadraoIterativos() {
-        spOrdemIterativo.setValue(6);
-        redimensionarTabelaSistema(modelIterativo, 6, true);
+        spOrdemIterativo.setValue(10);
+        String[] colsTrelica = {
+                "H1", "V1", "F2", "F1", "F6", "F5", "F4", "F3", "F7", "V5",
+                "b (Termo Indep.)", "x^(0)"
+        };
+        modelIterativo.setColumnIdentifiers(colsTrelica);
+        modelIterativo.setRowCount(10);
+
         txtTolerancia.setText("0.0001");
         txtMaxIter.setText("1000");
         cbChuteInicial.setSelectedIndex(0);
 
-        double c45 = Math.cos(Math.toRadians(45.0));
-        double s45 = Math.sin(Math.toRadians(45.0));
-        double c60 = Math.cos(Math.toRadians(60.0));
-        double s60 = Math.sin(Math.toRadians(60.0));
-        double s30 = Math.sin(Math.toRadians(30.0));
+        double[][] a = MetodosIterativos.MATRIZ_TRELICA_A;
+        double[] b = MetodosIterativos.VETOR_TRELICA_B;
 
-        // Equações de equilíbrio dos nós da treliça (F1 a F6)
-        double[][] a = {
-                { c45, 0.0,  0.0,  1.0,  0.0,  0.0 },
-                {-c45, 1.0,  c45,  0.0,  0.0,  0.0 },
-                {-s45, 0.0, -s45,  0.0,  0.0,  0.0 },
-                { 0.0, 0.0, -c45, -1.0,  c60,  0.0 },
-                { 0.0, 0.0,  s45,  0.0,  s60,  0.0 },
-                { 0.0, 0.0,  0.0,  0.0, -s60, -s30 }
-        };
-        double[] b = {0.0, 0.0, 500.0, 0.0, 0.0, 100.0};
-
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 6; j++) {
-                modelIterativo.setValueAt(a[i][j], i, j);
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                modelIterativo.setValueAt(String.format(Locale.US, "%.4f", a[i][j]), i, j);
             }
-            modelIterativo.setValueAt(b[i], i, 6);
-            modelIterativo.setValueAt(0.0, i, 7);
+            modelIterativo.setValueAt(b[i], i, 10);
+            modelIterativo.setValueAt(0.0, i, 11);
         }
-        outIterativo.setText("Dados padrão carregados: Problema 02.2 (Treliça - Sistema 6x6 com ε = 0.0001).\nClique em 'Executar Gauss-Seidel' para resolver.");
+        outIterativo.setText("Dados padrão carregados: Problema 02.2 (Treliça - 7 barras e 3 reações de apoio = Sistema 10x10 com ε = 0.0001).\nOrdem das incógnitas: x = (H1, V1, F2, F1, F6, F5, F4, F3, F7, V5).\nClique em 'Executar Gauss-Seidel' para resolver.");
     }
 
     private void executarIterativos() {
@@ -374,6 +366,14 @@ public final class InterfaceGrafica extends JFrame {
                     a[i][j] = lerCelulaDouble(modelIterativo.getValueAt(i, j), "A[" + (i + 1) + "][" + (j + 1) + "]");
                 }
                 b[i] = lerCelulaDouble(modelIterativo.getValueAt(i, n), "b[" + (i + 1) + "]");
+            }
+
+            // Caso seja o sistema 10x10 padrão da treliça (sem edição manual), usa os coeficientes trigonométricos exatos em double
+            boolean isTrelicaPadrao = (n == 10 && Math.abs(b[3] - 500.0) < 1e-6 && Math.abs(b[5] - 100.0) < 1e-6
+                    && Math.abs(a[0][3] - 0.7071) < 1e-3 && Math.abs(a[4][4] - 0.8660) < 1e-3);
+            if (isTrelicaPadrao) {
+                a = copiarMatriz(MetodosIterativos.MATRIZ_TRELICA_A);
+                b = MetodosIterativos.VETOR_TRELICA_B.clone();
             }
 
             double tol = lerCelulaDouble(txtTolerancia.getText(), "Tolerância (ε)");
@@ -403,6 +403,8 @@ public final class InterfaceGrafica extends JFrame {
             }
 
             // Verifica critérios de convergência e roda o Gauss-Seidel
+            double[] alphas = MetodosIterativos.calcularFatoresLinhas(a);
+            double[] betas = MetodosIterativos.calcularFatoresSassenfeld(a);
             double maxAlpha = MetodosIterativos.verificarCriterioLinhas(a);
             double maxBeta = MetodosIterativos.verificarCriterioSassenfeld(a);
             MetodosIterativos.ResultadoIterativo res =
@@ -410,31 +412,34 @@ public final class InterfaceGrafica extends JFrame {
 
             StringBuilder sb = new StringBuilder();
             sb.append("=== MÉTODO ITERATIVO DE GAUSS-SEIDEL ===\n\n");
-            sb.append("1) Análise de Convergência:\n");
-            sb.append(String.format("  Critério das Linhas (max α)     : %.4f %s%n",
-                    maxAlpha, (maxAlpha < 1.0 ? "[SATISFEITO]" : "[>= 1]")));
-            sb.append(String.format("  Critério de Sassenfeld (max β)  : %.4f %s%n\n",
-                    maxBeta, (maxBeta < 1.0 ? "[SATISFEITO]" : "[>= 1]")));
+            sb.append("1) Análise de Convergência (Critério das Linhas e de Sassenfeld):\n");
+            sb.append("----------------------------------------------------------------\n");
+            sb.append("  Linha (i)  |  Alfa_i (Critério Linhas)  |  Beta_i (Sassenfeld)\n");
+            sb.append("----------------------------------------------------------------\n");
+            for (int i = 0; i < n; i++) {
+                sb.append(String.format("     %2d      |         %10.4f         |       %10.4f%n", i + 1, alphas[i], betas[i]));
+            }
+            sb.append("----------------------------------------------------------------\n");
+            sb.append(String.format("  Máximo     |  max(α) = %10.4f %s |  max(β) = %10.4f %s%n",
+                    maxAlpha, (maxAlpha < 1.0 ? "[OK]" : "[>=1]"),
+                    maxBeta, (maxBeta < 1.0 ? "[OK]" : "[>=1]")));
+            sb.append("----------------------------------------------------------------\n\n");
 
             sb.append("2) Resultado das Iterações:\n");
-            sb.append("------------------------------------------------------------\n");
+            sb.append("----------------------------------------------------------------\n");
             sb.append("  Status               : ").append(res.convergiu ? "CONVERGIU COM SUCESSO" : "NÃO CONVERGIU NO LIMITE").append("\n");
             sb.append(String.format("  Iterações realizadas : %d%n", res.iteracoes));
             sb.append(String.format("  Erro máximo final    : %.6e (Tolerância: %.6f)%n", res.erroFinal, tol));
-            sb.append("------------------------------------------------------------\n");
+            sb.append("----------------------------------------------------------------\n");
 
-            // No caso da treliça, mostra também se a barra está sob tração ou compressão
-            boolean isTrelica = (n == 6 && Math.abs(b[2] - 500.0) < 1e-6 && Math.abs(b[5] - 100.0) < 1e-6);
-            for (int i = 0; i < n; i++) {
-                if (isTrelica) {
-                    String estado = (res.solucao[i] > 1e-6) ? "(Tração)"
-                            : (res.solucao[i] < -1e-6) ? "(Compressão)" : "(Nula)";
-                    sb.append(String.format("  F%d = %12.4f  %s%n", i + 1, res.solucao[i], estado));
-                } else {
+            if (isTrelicaPadrao) {
+                sb.append(MetodosIterativos.formatarSolucaoTrelica10x10(res.solucao)).append("\n");
+            } else {
+                for (int i = 0; i < n; i++) {
                     sb.append(String.format("  x%d = %12.4f%n", i + 1, res.solucao[i]));
                 }
+                sb.append("----------------------------------------------------------------\n");
             }
-            sb.append("------------------------------------------------------------\n");
 
             outIterativo.setText(sb.toString());
             outIterativo.setCaretPosition(0);

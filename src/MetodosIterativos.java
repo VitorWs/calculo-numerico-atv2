@@ -4,17 +4,24 @@ import java.util.Scanner;
  * Tópico 02 - Sistemas Lineares (Métodos Iterativos)
  * Problema 02.2 (Treliça) — Método Iterativo de Gauss-Seidel.
  *
- * Modelagem Matemática dos Dados Padrão da Treliça (Sistema 6x6):
- * - Equilíbrio estático (Soma Fx = 0, Soma Fy = 0) das 6 forças internas (F1 a F6)
- *   nos nós da treliça com ângulos de 45°, 45°, 60° e 30° e cargas verticais de 500 e 100.
- * - Equações já ordenadas para garantir elementos não-nulos na diagonal principal
+ * Modelagem Matemática dos Dados Padrão da Treliça (Sistema 10x10):
+ * - 5 nós articulados (10 equações de equilíbrio estático: Soma Fx = 0, Soma Fy = 0)
+ * - 7 barras (F1 a F7) e 3 reações de apoio (H1, V1, V5) = 10 incógnitas.
+ * - Vetor de incógnitas reordenado para garantir diagonal principal não-nula (a_ii != 0)
  *   e convergência no Método de Gauss-Seidel:
- *     1)  cos(45°)*F1 + F4                   =   0   (Nó 1 - Fx)
- *     2) -cos(45°)*F1 + F2 + cos(45°)*F3     =   0   (Nó 2 - Fx)
- *     3) -sin(45°)*F1      - sin(45°)*F3     = 500   (Nó 2 - Fy)
- *     4)              -cos(45°)*F3 - F4 + cos(60°)*F5 = 0 (Nó 4 - Fx)
- *     5)               sin(45°)*F3      + sin(60°)*F5 = 0 (Nó 4 - Fy)
- *     6)                                - sin(60°)*F5 - sin(30°)*F6 = 100 (Nó 3 - Fy)
+ *   x = (H1, V1, F2, F1, F6, F5, F4, F3, F7, V5)
+ *
+ * Equações dos Nós:
+ *   1) N1 Soma Fx:  1*H1 + cos(45°)*F1 + 1*F4                        =   0
+ *   2) N1 Soma Fy:  1*V1 + sin(45°)*F1                               =   0
+ *   3) N2 Soma Fx:  1*F2 - cos(45°)*F1 + cos(45°)*F3                 =   0
+ *   4) N2 Soma Fy:       - sin(45°)*F1 - sin(45°)*F3                 = 500
+ *   5) N3 Soma Fx: -1*F2 + cos(30°)*F6 - cos(60°)*F5                 =   0
+ *   6) N3 Soma Fy:       - sin(30°)*F6 - sin(60°)*F5                 = 100
+ *   7) N4 Soma Fx:  cos(60°)*F5 - 1*F4 - cos(45°)*F3 + 1*F7          =   0
+ *   8) N4 Soma Fy:  sin(60°)*F5        + sin(45°)*F3                 =   0
+ *   9) N5 Soma Fx: -cos(30°)*F6                      - 1*F7          =   0
+ *  10) N5 Soma Fy:  sin(30°)*F6                             + 1*V5   =   0
  */
 public class MetodosIterativos {
 
@@ -30,24 +37,38 @@ public class MetodosIterativos {
     private static final double COS_30 = Math.cos(Math.toRadians(30.0));
     private static final double SIN_30 = Math.sin(Math.toRadians(30.0));
 
-    // Matriz 6x6 padrão de equilíbrio estático da treliça
-    private static final double[][] MATRIZ_TRELICA_A = {
-        { COS_45,  0.0,    0.0,    1.0,    0.0,    0.0   }, // Eq 1 (F1): cos(45)F1 + F4 = 0
-        {-COS_45,  1.0,    COS_45, 0.0,    0.0,    0.0   }, // Eq 2 (F2): -cos(45)F1 + F2 + cos(45)F3 = 0
-        {-SIN_45,  0.0,   -SIN_45, 0.0,    0.0,    0.0   }, // Eq 3 (F3): -sin(45)F1 - sin(45)F3 = 500
-        { 0.0,     0.0,   -COS_45,-1.0,    COS_60, 0.0   }, // Eq 4 (F4): -cos(45)F3 - F4 + cos(60)F5 = 0
-        { 0.0,     0.0,    SIN_45, 0.0,    SIN_60, 0.0   }, // Eq 5 (F5): sin(45)F3 + sin(60)F5 = 0
-        { 0.0,     0.0,    0.0,    0.0,   -SIN_60,-SIN_30}  // Eq 6 (F6): -sin(60)F5 - sin(30)F6 = 100
+    // Ordem das incógnitas nas colunas da matriz 10x10 da treliça
+    public static final String[] NOMES_INCOGNITAS_TRELICA = {
+        "H1", "V1", "F2", "F1", "F6", "F5", "F4", "F3", "F7", "V5"
     };
 
-    // Vetor de cargas externas padrão da treliça
-    private static final double[] VETOR_TRELICA_B = {
+    // Matriz 10x10 padrão de equilíbrio estático da treliça
+    // Colunas:   H1    V1    F2       F1       F6       F5      F4       F3     F7    V5
+    public static final double[][] MATRIZ_TRELICA_A = {
+        { 1.0,  0.0,  0.0,  COS_45,  0.0,     0.0,     1.0,    0.0,     0.0,  0.0 }, // 1) N1 Fx
+        { 0.0,  1.0,  0.0,  SIN_45,  0.0,     0.0,     0.0,    0.0,     0.0,  0.0 }, // 2) N1 Fy
+        { 0.0,  0.0,  1.0, -COS_45,  0.0,     0.0,     0.0,    COS_45,  0.0,  0.0 }, // 3) N2 Fx
+        { 0.0,  0.0,  0.0, -SIN_45,  0.0,     0.0,     0.0,   -SIN_45,  0.0,  0.0 }, // 4) N2 Fy
+        { 0.0,  0.0, -1.0,  0.0,     COS_30, -COS_60,  0.0,    0.0,     0.0,  0.0 }, // 5) N3 Fx
+        { 0.0,  0.0,  0.0,  0.0,    -SIN_30, -SIN_60,  0.0,    0.0,     0.0,  0.0 }, // 6) N3 Fy
+        { 0.0,  0.0,  0.0,  0.0,     0.0,     COS_60, -1.0,   -COS_45,  1.0,  0.0 }, // 7) N4 Fx
+        { 0.0,  0.0,  0.0,  0.0,     0.0,     SIN_60,  0.0,    SIN_45,  0.0,  0.0 }, // 8) N4 Fy
+        { 0.0,  0.0,  0.0,  0.0,    -COS_30,  0.0,     0.0,    0.0,    -1.0,  0.0 }, // 9) N5 Fx
+        { 0.0,  0.0,  0.0,  0.0,     SIN_30,  0.0,     0.0,    0.0,     0.0,  1.0 }  // 10) N5 Fy
+    };
+
+    // Vetor de cargas externas padrão da treliça (10x1)
+    public static final double[] VETOR_TRELICA_B = {
+        0.0,
         0.0,
         0.0,
         500.0,
         0.0,
+        100.0,
         0.0,
-        100.0
+        0.0,
+        0.0,
+        0.0
     };
 
     /**
@@ -76,7 +97,7 @@ public class MetodosIterativos {
             opcao = Main.exibirSubMenuModulo(
                 scanner,
                 "TOPICO 02 - METODOS ITERATIVOS (GAUSS-SEIDEL)",
-                "Problema 02.2 - Trelica | eps = 0.0001"
+                "Problema 02.2 - Trelica 10x10 | eps = 0.0001"
             );
 
             switch (opcao) {
@@ -98,14 +119,15 @@ public class MetodosIterativos {
     }
 
     /**
-     * Executa o Problema 02.2 (Treliça) com os dados padrão e precisão 0.0001.
+     * Executa o Problema 02.2 (Treliça 10x10: 7 barras + 3 reações) com os dados padrão e precisão 0.0001.
      */
     private static void executarCasoPadrao() {
-        System.out.println("\n>>> Executando Problema 02.2 (Trelica) com dados padrao (eps = 0.0001)...");
+        System.out.println("\n>>> Executando Problema 02.2 (Trelica - 7 barras e 3 reacoes = 10x10) com dados padrao (eps = 0.0001)...");
         System.out.printf("Constantes trigonometricas: cos(45)=%.4f, sin(45)=%.4f, cos(60)=%.4f, sin(60)=%.4f, cos(30)=%.4f, sin(30)=%.4f%n",
                 COS_45, SIN_45, COS_60, SIN_60, COS_30, SIN_30);
+        System.out.println("Ordem das incognitas x = (H1, V1, F2, F1, F6, F5, F4, F3, F7, V5)");
 
-        double[] xInicial = new double[VETOR_TRELICA_B.length]; // Vetor inicial nulo [0, 0, 0, 0, 0, 0]
+        double[] xInicial = new double[VETOR_TRELICA_B.length]; // Vetor inicial nulo
         resolverEExibir(MATRIZ_TRELICA_A, VETOR_TRELICA_B, xInicial, TOLERANCIA_PADRAO, MAX_ITERACOES_PADRAO, true);
     }
 
@@ -228,16 +250,60 @@ public class MetodosIterativos {
         System.out.printf("  Erro final (max)   : %.6e%n", resultado.erroFinal);
         System.out.println("----------------------------------------------------------------");
 
-        for (int i = 0; i < n; i++) {
-            if (isTrelica) {
-                String estado = (resultado.solucao[i] > 1e-6) ? "(Tracao)"
-                              : (resultado.solucao[i] < -1e-6) ? "(Compressao)" : "(Nula)";
-                System.out.printf("  F%d = %12.4f  %s%n", i + 1, resultado.solucao[i], estado);
-            } else {
+        if (isTrelica && n == 10) {
+            System.out.println(formatarSolucaoTrelica10x10(resultado.solucao));
+        } else {
+            for (int i = 0; i < n; i++) {
                 System.out.printf("  x%d = %12.4f%n", i + 1, resultado.solucao[i]);
             }
+            System.out.println("----------------------------------------------------------------");
         }
-        System.out.println("----------------------------------------------------------------");
+    }
+
+    /**
+     * Formata a solução da treliça 10x10 organizando as 7 forças nas barras (F1 a F7)
+     * e as 3 reações de apoio (H1, V1, V5).
+     * Ordem no vetor x: (0:H1, 1:V1, 2:F2, 3:F1, 4:F6, 5:F5, 6:F4, 7:F3, 8:F7, 9:V5)
+     */
+    public static String formatarSolucaoTrelica10x10(double[] x) {
+        double h1 = (Math.abs(x[0]) < 1e-3) ? 0.0 : x[0];
+        double v1 = x[1];
+        double f2 = x[2];
+        double f1 = x[3];
+        double f6 = x[4];
+        double f5 = x[5];
+        double f4 = x[6];
+        double f3 = x[7];
+        double f7 = x[8];
+        double v5 = x[9];
+
+        double[] forcasBarras = {f1, f2, f3, f4, f5, f6, f7};
+        String[] descBarras = {
+            "Barra inclinada esquerda (45 graus)",
+            "Barra horizontal superior",
+            "Diagonal interna esquerda (45 graus)",
+            "Barra horizontal inferior esquerda",
+            "Diagonal interna direita (60 graus)",
+            "Barra inclinada direita (30 graus)",
+            "Barra horizontal inferior direita"
+        };
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("  Forcas Internas nas 7 Barras da Trelica:\n");
+        for (int i = 0; i < forcasBarras.length; i++) {
+            double val = forcasBarras[i];
+            String estado = (val > 1e-6) ? "Tracao" : (val < -1e-6) ? "Compressao" : "Nula";
+            sb.append(String.format("    F%d = %10.4f  [%-10s]  (%s)%n",
+                    i + 1, val, estado, descBarras[i]));
+        }
+        sb.append("----------------------------------------------------------------\n");
+        sb.append("  Reacoes de Apoio (Nos 1 e 5):\n");
+        sb.append(String.format("    H1 = %10.4f  [Nula]        (Reacao horizontal - No 1 Apoio fixo)%n", h1));
+        sb.append(String.format("    V1 = %10.4f  [Reacao]      (Reacao vertical   - No 1 Apoio fixo)%n", v1));
+        sb.append(String.format("    V5 = %10.4f  [Reacao]      (Reacao vertical   - No 5 Apoio movel)%n", v5));
+        sb.append(String.format("    Verificacao vertical: V1 + V5 = %.4f (Cargas: 500 + 100 = 600)%n", v1 + v5));
+        sb.append("----------------------------------------------------------------");
+        return sb.toString();
     }
 
     /**
@@ -257,7 +323,7 @@ public class MetodosIterativos {
         return max;
     }
 
-    private static double[] calcularFatoresLinhas(double[][] a) {
+    public static double[] calcularFatoresLinhas(double[][] a) {
         int n = a.length;
         double[] alphas = new double[n];
         for (int i = 0; i < n; i++) {
@@ -289,7 +355,7 @@ public class MetodosIterativos {
         return max;
     }
 
-    private static double[] calcularFatoresSassenfeld(double[][] a) {
+    public static double[] calcularFatoresSassenfeld(double[][] a) {
         int n = a.length;
         double[] betas = new double[n];
         for (int i = 0; i < n; i++) {
