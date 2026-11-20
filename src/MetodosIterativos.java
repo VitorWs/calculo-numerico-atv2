@@ -209,29 +209,38 @@ public class MetodosIterativos {
         MetodosDiretos.imprimirMatrizAumentada(a, b);
 
         // 2. Verificação dos Critérios de Convergência (Linhas e Sassenfeld)
+        // Verifica diretamente se o pivô |a_ii| é maior que o somatório em cada linha (sem calcular máximo)
         System.out.println("\n2) Analise de Convergencia (Criterio das Linhas e Criterio de Sassenfeld):");
-        double[] alphas = calcularFatoresLinhas(a);
-        double[] betas = calcularFatoresSassenfeld(a);
-        double maxAlpha = verificarCriterioLinhas(a);
-        double maxBeta = verificarCriterioSassenfeld(a);
+        double[] somasLinhas = calcularSomatoriosLinhas(a);
+        double[] somasSassenfeld = calcularSomatoriosSassenfeld(a);
+        boolean passouLinhas = verificarCriterioLinhas(a);
+        boolean passouSassenfeld = verificarCriterioSassenfeld(a);
 
-        System.out.println("----------------------------------------------------------------");
-        System.out.println("  Linha (i)  |  Alfa_i (Criterio Linhas)  |  Beta_i (Sassenfeld)");
-        System.out.println("----------------------------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.println("  Linha | Pivo |a_ii| | Soma |a_ij| (Linhas) | Soma Pond. (Sassenfeld) | Beta_i");
+        System.out.println("--------------------------------------------------------------------------------");
         for (int i = 0; i < n; i++) {
-            System.out.printf("     %2d      |         %10.4f         |       %10.4f%n", i + 1, alphas[i], betas[i]);
+            double pivo = Math.abs(a[i][i]);
+            double betaI = somasSassenfeld[i] / pivo;
+            String okLinha = (pivo > somasLinhas[i]) ? "OK" : "Falhou";
+            String okSass  = (pivo > somasSassenfeld[i]) ? "OK" : "Falhou";
+            System.out.printf("   %2d   |   %8.4f  |  %8.4f (%-6s)  |     %8.4f (%-6s)   | %6.4f%n",
+                    i + 1, pivo, somasLinhas[i], okLinha, somasSassenfeld[i], okSass, betaI);
         }
-        System.out.println("----------------------------------------------------------------");
-        System.out.printf("  Maximo     |  max(Alfa) = %10.4f    |  max(Beta) = %10.4f%n", maxAlpha, maxBeta);
-        System.out.println("----------------------------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.println("  Criterio das Linhas (|a_ii| > Soma |a_ij| em todas as linhas)   : "
+                + (passouLinhas ? "SATISFEITO" : "NAO SATISFEITO"));
+        System.out.println("  Criterio de Sassenfeld (|a_ii| > Soma Pond. em todas as linhas) : "
+                + (passouSassenfeld ? "SATISFEITO" : "NAO SATISFEITO"));
+        System.out.println("--------------------------------------------------------------------------------");
 
-        if (maxAlpha < 1.0) {
-            System.out.println("  [OK] Criterio das Linhas SATISFEITO (max Alfa < 1). Convergencia garantida!");
-        } else if (maxBeta < 1.0) {
-            System.out.println("  [OK] Criterio de Sassenfeld SATISFEITO (max Beta < 1). Convergencia garantida!");
+        if (passouLinhas) {
+            System.out.println("  [OK] Criterio das Linhas SATISFEITO (pivo > somatorio em todas as linhas). Convergencia garantida!");
+        } else if (passouSassenfeld) {
+            System.out.println("  [OK] Criterio de Sassenfeld SATISFEITO (pivo > somatorio ponderado em todas as linhas). Convergencia garantida!");
         } else {
-            System.out.println("  [AVISO] Os criterios suficientes (Linhas/Sassenfeld) resultaram em fator >= 1.");
-            System.out.println("          Como sao condicoes apenas SUFICIENTES (nao necessarias), o metodo");
+            System.out.println("  [AVISO] O pivo |a_ii| nao e maior que o somatorio em todas as linhas.");
+            System.out.println("          Como os criterios sao apenas SUFICIENTES (nao necessarios), o metodo");
             System.out.println("          de Gauss-Seidel sera executado com limite de seguranca de " + maxIteracoes + " iteracoes.");
         }
 
@@ -307,25 +316,36 @@ public class MetodosIterativos {
     }
 
     /**
-     * Verifica o Critério das Linhas para a matriz A.
+     * Verifica o Critério das Linhas (Dominância Diagonal Estrita):
+     * Em cada linha i, o módulo do pivô |a_ii| deve ser maior que o somatório
+     * dos módulos dos demais elementos da linha: |a_ii| > Soma_{j != i} |a_ij|.
      *
      * @param a Matriz dos coeficientes (n x n)
-     * @return Maior fator alfa_i calculado (converge garantidamente se < 1)
+     * @return true se todas as linhas satisfazem |a_ii| > somatório; false caso contrário
      */
-    public static double verificarCriterioLinhas(double[][] a) {
-        double[] alphas = calcularFatoresLinhas(a);
-        double max = 0.0;
-        for (double alpha : alphas) {
-            if (alpha > max) {
-                max = alpha;
+    public static boolean verificarCriterioLinhas(double[][] a) {
+        int n = a.length;
+        for (int i = 0; i < n; i++) {
+            double pivo = Math.abs(a[i][i]);
+            double somatorio = 0.0;
+            for (int j = 0; j < n; j++) {
+                if (i != j) {
+                    somatorio += Math.abs(a[i][j]);
+                }
+            }
+            if (pivo <= somatorio) {
+                return false;
             }
         }
-        return max;
+        return true;
     }
 
-    public static double[] calcularFatoresLinhas(double[][] a) {
+    /**
+     * Calcula o somatório dos módulos dos elementos fora da diagonal principal para cada linha i.
+     */
+    public static double[] calcularSomatoriosLinhas(double[][] a) {
         int n = a.length;
-        double[] alphas = new double[n];
+        double[] somas = new double[n];
         for (int i = 0; i < n; i++) {
             double soma = 0.0;
             for (int j = 0; j < n; j++) {
@@ -333,30 +353,46 @@ public class MetodosIterativos {
                     soma += Math.abs(a[i][j]);
                 }
             }
-            alphas[i] = soma / Math.abs(a[i][i]);
+            somas[i] = soma;
         }
-        return alphas;
+        return somas;
     }
 
     /**
-     * Verifica o Critério de Sassenfeld para convergência do método de Gauss-Seidel.
+     * Verifica o Critério de Sassenfeld para convergência do método de Gauss-Seidel:
+     * Em cada linha i, o módulo do pivô |a_ii| deve ser maior que o somatório ponderado
+     * pelos fatores beta_j anteriores (equivalente a beta_i < 1 em todas as linhas).
      *
      * @param a Matriz dos coeficientes (n x n)
-     * @return Maior fator beta_i calculado (converge garantidamente se < 1)
+     * @return true se em todas as linhas o pivô |a_ii| > somatório ponderado (beta_i < 1); false caso contrário
      */
-    public static double verificarCriterioSassenfeld(double[][] a) {
-        double[] betas = calcularFatoresSassenfeld(a);
-        double max = 0.0;
-        for (double beta : betas) {
-            if (beta > max) {
-                max = beta;
+    public static boolean verificarCriterioSassenfeld(double[][] a) {
+        int n = a.length;
+        double[] betas = new double[n];
+        for (int i = 0; i < n; i++) {
+            double pivo = Math.abs(a[i][i]);
+            double somatorioPonderado = 0.0;
+            for (int j = 0; j < n; j++) {
+                if (j < i) {
+                    somatorioPonderado += Math.abs(a[i][j]) * betas[j];
+                } else if (j > i) {
+                    somatorioPonderado += Math.abs(a[i][j]);
+                }
+            }
+            betas[i] = somatorioPonderado / pivo;
+            if (pivo <= somatorioPonderado) {
+                return false;
             }
         }
-        return max;
+        return true;
     }
 
-    public static double[] calcularFatoresSassenfeld(double[][] a) {
+    /**
+     * Calcula o somatório ponderado de Sassenfeld para cada linha i.
+     */
+    public static double[] calcularSomatoriosSassenfeld(double[][] a) {
         int n = a.length;
+        double[] somasPond = new double[n];
         double[] betas = new double[n];
         for (int i = 0; i < n; i++) {
             double soma = 0.0;
@@ -367,9 +403,10 @@ public class MetodosIterativos {
                     soma += Math.abs(a[i][j]);
                 }
             }
+            somasPond[i] = soma;
             betas[i] = soma / Math.abs(a[i][i]);
         }
-        return betas;
+        return somasPond;
     }
 
     /**

@@ -402,28 +402,34 @@ public final class InterfaceGrafica extends JFrame {
                 }
             }
 
-            // Verifica critérios de convergência e roda o Gauss-Seidel
-            double[] alphas = MetodosIterativos.calcularFatoresLinhas(a);
-            double[] betas = MetodosIterativos.calcularFatoresSassenfeld(a);
-            double maxAlpha = MetodosIterativos.verificarCriterioLinhas(a);
-            double maxBeta = MetodosIterativos.verificarCriterioSassenfeld(a);
+            // Verifica critérios de convergência (|a_ii| > somatório em todas as linhas) e roda o Gauss-Seidel
+            double[] somasLinhas = MetodosIterativos.calcularSomatoriosLinhas(a);
+            double[] somasSassenfeld = MetodosIterativos.calcularSomatoriosSassenfeld(a);
+            boolean passouLinhas = MetodosIterativos.verificarCriterioLinhas(a);
+            boolean passouSassenfeld = MetodosIterativos.verificarCriterioSassenfeld(a);
             MetodosIterativos.ResultadoIterativo res =
                     MetodosIterativos.executarGaussSeidelDetalhado(a, b, x0, tol, maxIter);
 
             StringBuilder sb = new StringBuilder();
             sb.append("=== MÉTODO ITERATIVO DE GAUSS-SEIDEL ===\n\n");
-            sb.append("1) Análise de Convergência (Critério das Linhas e de Sassenfeld):\n");
-            sb.append("----------------------------------------------------------------\n");
-            sb.append("  Linha (i)  |  Alfa_i (Critério Linhas)  |  Beta_i (Sassenfeld)\n");
-            sb.append("----------------------------------------------------------------\n");
+            sb.append("1) Análise de Convergência (Pivô |a_ii| > Somatório da Linha):\n");
+            sb.append("--------------------------------------------------------------------------------\n");
+            sb.append("  Linha | Pivô |a_ii| | Soma |a_ij| (Linhas) | Soma Pond. (Sassenfeld) | Beta_i\n");
+            sb.append("--------------------------------------------------------------------------------\n");
             for (int i = 0; i < n; i++) {
-                sb.append(String.format("     %2d      |         %10.4f         |       %10.4f%n", i + 1, alphas[i], betas[i]));
+                double pivo = Math.abs(a[i][i]);
+                double betaI = somasSassenfeld[i] / pivo;
+                String okLinha = (pivo > somasLinhas[i]) ? "OK" : "Falhou";
+                String okSass  = (pivo > somasSassenfeld[i]) ? "OK" : "Falhou";
+                sb.append(String.format("   %2d   |   %8.4f  |  %8.4f (%-6s)  |     %8.4f (%-6s)   | %6.4f%n",
+                        i + 1, pivo, somasLinhas[i], okLinha, somasSassenfeld[i], okSass, betaI));
             }
-            sb.append("----------------------------------------------------------------\n");
-            sb.append(String.format("  Máximo     |  max(α) = %10.4f %s |  max(β) = %10.4f %s%n",
-                    maxAlpha, (maxAlpha < 1.0 ? "[OK]" : "[>=1]"),
-                    maxBeta, (maxBeta < 1.0 ? "[OK]" : "[>=1]")));
-            sb.append("----------------------------------------------------------------\n\n");
+            sb.append("--------------------------------------------------------------------------------\n");
+            sb.append("  Critério das Linhas (|a_ii| > Soma |a_ij| em todas as linhas)   : ")
+              .append(passouLinhas ? "SATISFEITO" : "NÃO SATISFEITO").append("\n");
+            sb.append("  Critério de Sassenfeld (|a_ii| > Soma Pond. em todas as linhas) : ")
+              .append(passouSassenfeld ? "SATISFEITO" : "NÃO SATISFEITO").append("\n");
+            sb.append("--------------------------------------------------------------------------------\n\n");
 
             sb.append("2) Resultado das Iterações:\n");
             sb.append("----------------------------------------------------------------\n");
