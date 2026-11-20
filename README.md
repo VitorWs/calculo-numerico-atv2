@@ -168,10 +168,10 @@ calculo-numerico-atv2/
 
 ---
 
-## 5. Equipe
+## 5. Equipe e Divisão de Atividades
 
 | Integrante | Papel / Responsabilidade |
 | :--- | :--- |
-| **Vitor Santos** | Arquitetura base, integração e implementação de módulos numéricos |
-| **Laedson Araújo** | Implementação e validação de módulos numéricos |
-| **Myguel Luiz** | Implementação, testes de casos de borda e documentação |
+| **Vitor Santos** | Implementação das questões **01.3 (Mineração — Eliminação de Gauss)** e **02.2 (Treliça — Gauss-Seidel)**, arquitetura base e elaboração do relatório explicativo |
+| **Myguel Luiz** | Implementação das questões **03.1 (Lei de Moore — Mínimos Quadrados)** e **04.2 (Área do Rio — Integração Numérica)** |
+| **Laedson Araújo** | Desenvolvimento e integração da **Interface Gráfica (`InterfaceGrafica.java`)** |
